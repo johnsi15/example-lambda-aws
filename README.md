@@ -100,3 +100,80 @@ Supón que tienes una Lambda que recibe un evento para crear un usuario:
 Las Lambdas deben ser idempotentes para evitar problemas en caso de reintentos o entregas duplicadas de eventos. Así, si la función se ejecuta más de una vez con el mismo input, no genera efectos secundarios indeseados ni datos duplicados.
 
 
+---
+
+## Resumen de buenas prácticas de codificación para funciones Lambda en Node.js
+
+1. **Separa el controlador de Lambda de la lógica del núcleo**: Facilita las pruebas unitarias y el mantenimiento del código.
+   
+    ```js
+    // core.js
+    export function suma(a, b) { return a + b; }
+    // handler.mjs
+    import { suma } from './core.js';
+    export const handler = async (event) => ({ resultado: suma(event.a, event.b) });
+    ```
+
+2. **Controla las dependencias**: Empaqueta todas las dependencias necesarias con tu función para evitar cambios inesperados por actualizaciones del entorno de AWS Lambda.
+   
+    - Usa un archivo `package.json` y ejecuta `npm install` o `pnpm install` antes de empaquetar.
+
+3. **Minimiza la complejidad de las dependencias**: Prefiere frameworks sencillos para reducir el tiempo de arranque (cold start).
+   
+    - Prefiere usar solo el SDK de AWS y utilidades nativas de Node.js cuando sea posible.
+
+4. **Reduce el tamaño del paquete de implementación**: Solo incluye lo necesario para acelerar la descarga y el desempaquetado.
+   
+    - Elimina dependencias y archivos no usados antes de desplegar.
+
+5. **Reutiliza el entorno de ejecución**: Inicializa clientes de SDK y conexiones fuera del handler para mejorar el rendimiento y reutilizar recursos entre invocaciones.
+   
+    ```js
+    // Se inicializa fuera del handler
+    import AWS from 'aws-sdk';
+    const s3 = new AWS.S3();
+    export const handler = async (event) => { /* usa s3 aquí */ };
+    ```
+
+6. **Evita almacenar datos sensibles o de usuario en el entorno de ejecución**: No uses variables globales para datos de usuario o eventos, ya que pueden compartirse entre invocaciones.
+   
+    ```js
+    // INCORRECTO
+    let usuarioActual;
+    export const handler = async (event) => { usuarioActual = event.user; };
+    ```
+
+7. **Utiliza directivas keep-alive para conexiones persistentes**: Configura keep-alive en clientes HTTP/HTTPS para evitar errores por conexiones inactivas.
+   
+    ```js
+    import https from 'https';
+    const agent = new https.Agent({ keepAlive: true });
+    // Usar agent en peticiones HTTP
+    ```
+
+8. **Usa variables de entorno para parámetros operativos**: No codifiques valores sensibles o configuraciones directamente en el código.
+   
+    ```js
+    const bucket = process.env.BUCKET_NAME;
+    ```
+
+9. **Evita invocaciones recursivas**: No hagas que la función se invoque a sí misma para prevenir bucles y costos inesperados.
+   
+    - Si necesitas procesamiento asíncrono, usa colas (SQS) o Step Functions.
+
+10. **No uses APIs no documentadas o privadas**: Limítate a las APIs públicas y documentadas para evitar problemas de compatibilidad.
+   
+    - Consulta siempre la documentación oficial de AWS.
+
+11. **Escribe código idempotente**: Asegúrate de que la función maneje correctamente eventos duplicados y no genere efectos secundarios adicionales.
+   
+    ```js
+    // Ejemplo: solo crear si no existe
+    if (!(await existeRegistro(event.id))) {
+      await crearRegistro(event.id);
+    }
+    ```
+
+Estas prácticas ayudan a crear funciones Lambda más seguras, eficientes, fáciles de mantener y menos propensas a errores en producción.
+
+
