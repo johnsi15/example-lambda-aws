@@ -70,6 +70,19 @@ Puedes configurar tu Lambda para que se ejecute cuando:
 - Maneja los errores correctamente.
 - Usa roles de IAM para dar permisos mínimos necesarios.
 
+
+## ¿Cómo probar tu Lambda localmente?
+
+Si tienes instalado Serverless Framework, puedes hacer una prueba rápida de tu función Lambda localmente con el siguiente comando:
+
+```sh
+npx serverless invoke local --function NOMBRE_DE_TU_FUNCION
+```
+
+Reemplaza `NOMBRE_DE_TU_FUNCION` por el nombre definido en tu `serverless.yml` (por ejemplo, `procesarRecibo`).
+
+Más información y pasos detallados para desplegar tu Lambda en AWS están en el archivo [`DEPLOY_SERVERLESS.md`](./DEPLOY_SERVERLESS.md).
+
 ## Recursos útiles
 
 - [Documentación oficial de AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html)
