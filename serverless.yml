@@ -1,0 +1,33 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: johnserranodev
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: example-lambda-aws
+service: ejemplo-lambda-aws
+provider:
+  name: aws
+  runtime: nodejs18.x
+  profile: serverless-test
+  environment:
+    RECEIPT_BUCKET: test-s3-jsdev
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+          Resource: arn:aws:s3:::test-s3-jsdev/receipts/*
+functions:
+  procesarRecibo:
+    handler: index.handler
+    events:
+      - http:
+          path: recibo
+          method: post
+
+# Forzar inclusión de dependencias y archivos fuente en el paquete
+package:
+  patterns:
+    - node_modules/**
+    - index.js
+    - index.mjs
+    - package.json

@@ -13,24 +13,32 @@ const s3Client = new S3Client()
  */
 export const handler = async event => {
   try {
-    // Access environment variables
+    const data = typeof event.body === 'string' ? JSON.parse(event.body) : event
+
     const bucketName = process.env.RECEIPT_BUCKET
     if (!bucketName) {
       throw new Error('RECEIPT_BUCKET environment variable is not set')
     }
 
-    // Create the receipt content and key destination
-    const receiptContent = `OrderID: ${event.order_id}\nAmount: $${event.amount.toFixed(2)}\nItem: ${event.item}`
-    const key = `receipts/${event.order_id}.txt`
+    const receiptContent = `OrderID: ${data.order_id}\nAmount: $${data.amount.toFixed(2)}\nItem: ${data.item}`
+    const key = `receipts/${data.order_id}.txt`
 
-    // Upload the receipt to S3
+    // Upload the receipt content to S3
     await uploadReceiptToS3(bucketName, key, receiptContent)
 
-    console.log(`Successfully processed order ${event.order_id} and stored receipt in S3 bucket ${bucketName}`)
-    return 'Success'
+    console.log(`Successfully processed order ${data.order_id} and stored receipt in S3 bucket ${bucketName}`)
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Recibo guardado correctamente' }),
+    }
   } catch (error) {
     console.error(`Failed to process order: ${error.message}`)
-    throw error
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Error interno: ' + error.message }),
+    }
   }
 }
 
